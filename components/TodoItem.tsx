@@ -20,9 +20,13 @@ export default function TodoItem({
 }: Props) {
   const [showDepSelect, setShowDepSelect] = useState(false);
   const [depError, setDepError] = useState<string | null>(null);
+  const [imgError, setImgError] = useState(false);
 
   const isOverdue =
     todo.dueDate && new Date(todo.dueDate) < new Date();
+
+  const formatDate = (d: string | Date) =>
+    new Date(d).toLocaleDateString("en-US", { timeZone: "UTC" });
 
   const existingDepIds = new Set(todo.dependsOn.map((d) => d.dependencyId));
 
@@ -44,7 +48,7 @@ export default function TodoItem({
   return (
     <li className="bg-white rounded-xl shadow-md overflow-hidden transition-all duration-200 hover:shadow-lg">
       {/* Image banner */}
-      {todo.imageUrl ? (
+      {todo.imageUrl && !imgError ? (
         <div className="relative w-full h-36">
           <Image
             src={todo.imageUrl}
@@ -52,6 +56,7 @@ export default function TodoItem({
             fill
             className="object-cover"
             sizes="(max-width: 600px) 100vw, 600px"
+            onError={() => setImgError(true)}
           />
         </div>
       ) : (
@@ -85,13 +90,13 @@ export default function TodoItem({
                   : "bg-gray-100 text-gray-600"
               }`}
             >
-              📅 {new Date(todo.dueDate).toLocaleDateString()}
+              📅 {formatDate(todo.dueDate!)}
             </span>
           )}
           {todo.cpm &&
             todo.dependsOn.length > 0 && (
               <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-blue-50 text-blue-600">
-                Can start: {new Date(todo.cpm.earliestStart).toLocaleDateString()}
+                Can start: {formatDate(todo.cpm.earliestStart)}
               </span>
             )}
           {todo.cpm?.isOnCriticalPath && todo.dependsOn.length + todo.dependedBy.length > 0 && (

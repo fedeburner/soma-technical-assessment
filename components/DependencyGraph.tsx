@@ -80,12 +80,12 @@ function TodoNode({ data }: { data: TodoNodeData }) {
                 : "bg-gray-100 text-gray-500"
             }`}
           >
-            Due: {new Date(data.dueDate).toLocaleDateString()}
+            Due: {new Date(data.dueDate).toLocaleDateString("en-US", { timeZone: "UTC" })}
           </span>
         )}
         {data.earliestStart && (
           <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600 font-medium">
-            Start: {new Date(data.earliestStart).toLocaleDateString()}
+            Start: {new Date(data.earliestStart).toLocaleDateString("en-US", { timeZone: "UTC" })}
           </span>
         )}
         {data.isOnCriticalPath && (
