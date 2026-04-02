@@ -66,7 +66,7 @@ export default function TodoItem({
     <li className={`bg-white rounded-xl shadow-md overflow-hidden transition-all duration-200 hover:shadow-lg border-l-4 ${borderAccent}`}>
       {/* Image banner */}
       {todo.imageUrl && !imgError ? (
-        <div className="relative w-full h-36">
+        <div className="relative w-full h-36 bg-gradient-to-r from-orange-100 to-red-100 animate-pulse">
           <Image
             src={todo.imageUrl}
             alt={todo.title}
