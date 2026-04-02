@@ -86,10 +86,12 @@ export async function POST(
 
     return NextResponse.json(edge, { status: 201 });
   } catch (error: unknown) {
-    if (
-      error instanceof Error &&
-      error.message.includes("Unique constraint")
-    ) {
+    const isPrismaUnique =
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as { code: string }).code === "P2002";
+    if (isPrismaUnique) {
       return NextResponse.json(
         { error: "This dependency already exists" },
         { status: 409 }
@@ -112,10 +114,33 @@ export async function DELETE(
   }
 
   try {
-    const { dependencyId } = await request.json();
-    await prisma.todoDependency.deleteMany({
+    let body: { dependencyId?: unknown };
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Request body is required" },
+        { status: 400 }
+      );
+    }
+
+    const dependencyId = Number(body.dependencyId);
+    if (!dependencyId || isNaN(dependencyId)) {
+      return NextResponse.json(
+        { error: "Valid dependencyId is required" },
+        { status: 400 }
+      );
+    }
+
+    const result = await prisma.todoDependency.deleteMany({
       where: { dependentId, dependencyId },
     });
+    if (result.count === 0) {
+      return NextResponse.json(
+        { error: "Dependency not found" },
+        { status: 404 }
+      );
+    }
     return NextResponse.json({ message: "Dependency removed" });
   } catch (error) {
     return NextResponse.json(

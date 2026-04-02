@@ -33,24 +33,36 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });
     }
 
-    let imageUrl: string | null = null;
-    try {
-      const pexelsRes = await fetch(
-        `https://api.pexels.com/v1/search?query=${encodeURIComponent(title)}&per_page=1`,
-        { headers: { Authorization: process.env.PEXELS_API_KEY! } }
-      );
-      const pexelsData = await pexelsRes.json();
-      if (pexelsData.photos?.[0]) {
-        imageUrl = pexelsData.photos[0].src.medium;
+    let parsedDueDate: Date | null = null;
+    if (dueDate) {
+      const d = new Date(dueDate);
+      if (isNaN(d.getTime())) {
+        return NextResponse.json({ error: 'Invalid due date' }, { status: 400 });
       }
-    } catch {
-      // Pexels failure should never block todo creation
+      parsedDueDate = d;
+    }
+
+    let imageUrl: string | null = null;
+    const pexelsKey = process.env.PEXELS_API_KEY;
+    if (pexelsKey) {
+      try {
+        const pexelsRes = await fetch(
+          `https://api.pexels.com/v1/search?query=${encodeURIComponent(title)}&per_page=1`,
+          { headers: { Authorization: pexelsKey } }
+        );
+        const pexelsData = await pexelsRes.json();
+        if (pexelsData.photos?.[0]?.src?.medium) {
+          imageUrl = pexelsData.photos[0].src.medium;
+        }
+      } catch {
+        // Pexels failure should never block todo creation
+      }
     }
 
     const todo = await prisma.todo.create({
       data: {
-        title,
-        dueDate: dueDate ? new Date(dueDate) : null,
+        title: title.trim(),
+        dueDate: parsedDueDate,
         imageUrl,
       },
       include: TODO_INCLUDE,

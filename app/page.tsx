@@ -26,16 +26,25 @@ export default function Home() {
   }, []);
 
   const handleAdd = async (title: string, dueDate: string | null) => {
-    await fetch("/api/todos", {
+    const res = await fetch("/api/todos", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title, dueDate }),
     });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error || "Failed to create task");
+      return;
+    }
     await fetchTodos();
   };
 
   const handleDelete = async (id: number) => {
-    await fetch(`/api/todos/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/todos/${id}`, { method: "DELETE" });
+    if (!res.ok) {
+      setError("Failed to delete task");
+      return;
+    }
     await fetchTodos();
   };
 
@@ -49,7 +58,7 @@ export default function Home() {
       body: JSON.stringify({ dependencyId: depId }),
     });
     if (!res.ok) {
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       return data.error || "Failed to add dependency";
     }
     await fetchTodos();
@@ -57,11 +66,15 @@ export default function Home() {
   };
 
   const handleRemoveDep = async (todoId: number, depId: number) => {
-    await fetch(`/api/todos/${todoId}/dependencies`, {
+    const res = await fetch(`/api/todos/${todoId}/dependencies`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ dependencyId: depId }),
     });
+    if (!res.ok) {
+      setError("Failed to remove dependency");
+      return;
+    }
     await fetchTodos();
   };
 

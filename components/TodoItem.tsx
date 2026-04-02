@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { TodoWithCPM } from "@/lib/types";
 
@@ -21,6 +21,15 @@ export default function TodoItem({
   const [showDepSelect, setShowDepSelect] = useState(false);
   const [depError, setDepError] = useState<string | null>(null);
   const [imgError, setImgError] = useState(false);
+  const errorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => setImgError(false), [todo.imageUrl]);
+
+  useEffect(() => {
+    return () => {
+      if (errorTimer.current) clearTimeout(errorTimer.current);
+    };
+  }, []);
 
   const isOverdue =
     todo.dueDate && new Date(todo.dueDate) < new Date();
@@ -36,10 +45,11 @@ export default function TodoItem({
 
   const handleAddDep = async (depId: number) => {
     setDepError(null);
+    if (errorTimer.current) clearTimeout(errorTimer.current);
     const error = await onAddDep(todo.id, depId);
     if (error) {
       setDepError(error);
-      setTimeout(() => setDepError(null), 4000);
+      errorTimer.current = setTimeout(() => setDepError(null), 4000);
     } else {
       setShowDepSelect(false);
     }
