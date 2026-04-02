@@ -58,29 +58,13 @@ Thanks for your time and effort. We'll be in touch soon!
 
 ## Solution
 
-### Running it
-
 ```bash
 cp .env.example .env.local   # add your Pexels API key
-npm install
-npx prisma migrate dev
-npm run dev
+npm install && npx prisma migrate dev && npm run dev
 ```
 
-### What I built
+Due dates and Pexels images were straightforward — dates go in the schema, overdue ones render red, and images get fetched server-side during creation so the API key stays off the client.
 
-**Due dates** — date picker in the create form, dates show as badges on each card, overdue ones turn red.
-
-**Pexels images** — the Pexels search happens server-side during todo creation (keeps the API key off the client). If it fails or returns nothing, the todo still gets created, just without an image. The form shows a spinner while the POST + Pexels round-trip completes.
-
-**Dependencies** — this was the interesting part. I added a `TodoDependency` join table (explicit rather than Prisma's implicit many-to-many, so I have control over cascade deletes). Each card shows what it depends on and what it blocks.
-
-For cycle prevention, when you try to add an edge A→B, the server does a DFS from B through existing deps. If it can reach A, the edge would create a cycle and gets rejected with a message showing the exact cycle path. Self-references are caught with a simpler check before the DFS even runs.
-
-For the critical path, I implemented the standard CPM algorithm (`lib/critical-path.ts`): topological sort via Kahn's, then a forward pass for earliest start/finish and a backward pass for latest start/finish. Tasks with zero slack are on the critical path. Due dates act as the finish constraint; tasks without one default to a 1-day duration. These values are computed on every GET, never stored — they're derived data.
-
-The dependency graph uses ReactFlow with dagre for auto-layout. It shows up automatically below the task list once dependencies exist. Critical path nodes/edges are highlighted in amber, overdue nodes get red borders, and there's a legend in the corner.
-
-### Screenshot
+The dependency system was the meaty part. Cycle detection runs a DFS at write time so the graph can never get into a bad state. Critical path uses standard CPM (topo sort → forward pass → backward pass, see `lib/critical-path.ts`) and is computed on read, never stored. The graph viz uses ReactFlow + dagre for auto-layout and highlights the critical path in amber.
 
 <!-- Add screenshot here -->
