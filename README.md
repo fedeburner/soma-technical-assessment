@@ -58,48 +58,29 @@ Thanks for your time and effort. We'll be in touch soon!
 
 ## Solution
 
-### Setup
+### Running it
 
 ```bash
-git clone https://github.com/fedeburner/soma-technical-assessment.git
-cd soma-technical-assessment
 cp .env.example .env.local   # add your Pexels API key
 npm install
 npx prisma migrate dev
 npm run dev
 ```
 
-### Part 1: Due Dates
+### What I built
 
-- The create form includes a native date picker alongside the title input.
-- Due dates are stored as nullable `DateTime` in the Prisma schema.
-- Each todo card displays the due date as a pill badge. If the due date is in the past, the badge turns red (`bg-red-100 text-red-700`).
+**Due dates** — date picker in the create form, dates show as badges on each card, overdue ones turn red.
 
-### Part 2: Image Previews
+**Pexels images** — the Pexels search happens server-side during todo creation (keeps the API key off the client). If it fails or returns nothing, the todo still gets created, just without an image. The form shows a spinner while the POST + Pexels round-trip completes.
 
-- When a todo is created, the `POST /api/todos` handler fetches the Pexels API server-side using the task title as the search query, then stores the returned image URL on the todo record.
-- The API key never leaves the server (stored in `.env.local`, accessed via `process.env`).
-- The form shows a spinner while the POST is in flight (which includes the Pexels round-trip). If Pexels returns no results or errors, the todo is still created -- it just gets a gradient placeholder instead of an image.
-- Images are displayed using `next/image` with `remotePatterns` configured for `images.pexels.com`.
+**Dependencies** — this was the interesting part. I added a `TodoDependency` join table (explicit rather than Prisma's implicit many-to-many, so I have control over cascade deletes). Each card shows what it depends on and what it blocks.
 
-### Part 3: Task Dependencies
+For cycle prevention, when you try to add an edge A→B, the server does a DFS from B through existing deps. If it can reach A, the edge would create a cycle and gets rejected with a message showing the exact cycle path. Self-references are caught with a simpler check before the DFS even runs.
 
-**Data model**: A `TodoDependency` join table with a unique constraint on `(dependentId, dependencyId)` and `onDelete: Cascade` so deleting a todo automatically cleans up its edges.
+For the critical path, I implemented the standard CPM algorithm (`lib/critical-path.ts`): topological sort via Kahn's, then a forward pass for earliest start/finish and a backward pass for latest start/finish. Tasks with zero slack are on the critical path. Due dates act as the finish constraint; tasks without one default to a 1-day duration. These values are computed on every GET, never stored — they're derived data.
 
-**Cycle prevention**: When adding a dependency edge A→B, the server runs a DFS from B through the existing graph. If it reaches A, the edge would create a cycle and the request is rejected with a 400 and a descriptive error message showing the exact cycle path. Self-references (`A→A`) are caught with an explicit check before the DFS.
+The dependency graph uses ReactFlow with dagre for auto-layout. It shows up automatically below the task list once dependencies exist. Critical path nodes/edges are highlighted in amber, overdue nodes get red borders, and there's a legend in the corner.
 
-**Critical Path Method (CPM)**: Implemented as a pure function in `lib/critical-path.ts`:
-1. Kahn's algorithm for topological sort (also validates the graph is acyclic)
-2. Forward pass: compute earliest start (ES) and earliest finish (EF) for each task
-3. Backward pass: compute latest start (LS) and latest finish (LF)
-4. Slack = LS − ES; tasks with zero slack are on the critical path
+### Screenshot
 
-Due dates serve as finish constraints. Tasks without due dates default to a 1-day duration. Earliest start dates and critical path status are **computed on every GET request** (derived values, never stored), so they're always fresh.
-
-**Dependency graph visualization**: Built with `@xyflow/react` (ReactFlow) and `@dagrejs/dagre` for automatic top-to-bottom layout. The graph auto-appears below the task list whenever dependencies exist. Features:
-- Custom node components showing title, due date, and earliest start date
-- Critical path nodes highlighted with amber borders and glow
-- Critical path edges are animated and thicker
-- Overdue nodes get red borders
-- Legend explaining the color coding
-- Built-in zoom, pan, and drag via ReactFlow
+<!-- Add screenshot here -->
