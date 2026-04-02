@@ -5,33 +5,35 @@ async function wouldCreateCycle(
   dependentId: number,
   dependencyId: number
 ): Promise<string[] | null> {
+  const allTodos = await prisma.todo.findMany({
+    include: { dependsOn: { include: { dependency: true } } },
+  });
+
+  const todoMap = new Map(allTodos.map((t) => [t.id, t]));
+  const depTodo = todoMap.get(dependencyId);
+  if (!depTodo) return null;
+
   const visited = new Set<number>();
   const path: string[] = [];
 
-  async function dfs(currentId: number): Promise<boolean> {
+  function dfs(currentId: number): boolean {
     if (currentId === dependentId) return true;
     if (visited.has(currentId)) return false;
     visited.add(currentId);
 
-    const todo = await prisma.todo.findUnique({
-      where: { id: currentId },
-      include: { dependsOn: { include: { dependency: true } } },
-    });
+    const todo = todoMap.get(currentId);
     if (!todo) return false;
 
     for (const dep of todo.dependsOn) {
       path.push(dep.dependency.title);
-      if (await dfs(dep.dependencyId)) return true;
+      if (dfs(dep.dependencyId)) return true;
       path.pop();
     }
     return false;
   }
 
-  const depTodo = await prisma.todo.findUnique({ where: { id: dependencyId } });
-  if (!depTodo) return null;
-
   path.push(depTodo.title);
-  const hasCycle = await dfs(dependencyId);
+  const hasCycle = dfs(dependencyId);
   return hasCycle ? path : null;
 }
 

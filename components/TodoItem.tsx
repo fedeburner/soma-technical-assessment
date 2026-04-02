@@ -45,8 +45,15 @@ export default function TodoItem({
     }
   };
 
+  const borderAccent = isOverdue
+    ? "border-l-red-500"
+    : todo.cpm?.isOnCriticalPath &&
+        (todo.dependsOn.length > 0 || todo.dependedBy.length > 0)
+      ? "border-l-amber-400"
+      : "border-l-transparent";
+
   return (
-    <li className="bg-white rounded-xl shadow-md overflow-hidden transition-all duration-200 hover:shadow-lg">
+    <li className={`bg-white rounded-xl shadow-md overflow-hidden transition-all duration-200 hover:shadow-lg border-l-4 ${borderAccent}`}>
       {/* Image banner */}
       {todo.imageUrl && !imgError ? (
         <div className="relative w-full h-36">
@@ -124,6 +131,23 @@ export default function TodoItem({
                 >
                   ×
                 </button>
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Blocks display */}
+        {todo.dependedBy.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            <span className="text-xs text-gray-400">Blocks:</span>
+            {todo.dependedBy.map((dep) => (
+              <span
+                key={dep.dependentId}
+                className="text-xs bg-purple-50 text-purple-600 px-2 py-0.5 rounded-full"
+              >
+                {dep.dependent.title.length > 20
+                  ? dep.dependent.title.slice(0, 20) + "…"
+                  : dep.dependent.title}
               </span>
             ))}
           </div>
