@@ -83,6 +83,10 @@ For the critical path I implemented standard CPM in `lib/critical-path.ts` — t
 
 The graph visualization uses ReactFlow with dagre for automatic layout. It appears below the task list once you've added at least one dependency. Critical path nodes and edges are highlighted in amber, and overdue nodes get a red border.
 
-### Screenshot
+### Screenshots
+<img width="329" height="579" alt="Screenshot 2026-04-08 at 1 11 11 AM" src="https://github.com/user-attachments/assets/b8416bbe-8593-4ad3-af4f-cfff4124cf33" />
+<img width="416" height="598" alt="Screenshot 2026-04-08 at 1 11 33 AM" src="https://github.com/user-attachments/assets/089def32-9baf-47a6-948f-7fa1545cd47a" />
+
+
 
 <!-- Add screenshot here -->
